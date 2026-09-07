@@ -1,5 +1,13 @@
+<<<<<<< HEAD
 Opencv python
 Requess
 Python dotenv
 Web3
 pillow
+=======
+opencv-python
+requests
+python-dotenv
+web3
+Pillow
+>>>>>>> origin/feature/blockchain
