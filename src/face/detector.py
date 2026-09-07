@@ -1,48 +1,167 @@
 import os
 import cv2
 
-def detect_and_crop_face(image_path, output_dir="data"):
+
+MODEL_PATH = (
+    "models/face_detection_yunet_2023mar.onnx"
+)
+
+
+def detect_faces(image_path):
+    """
+    Load an image and detect faces using YuNet.
+    """
+
     if not os.path.exists(image_path):
         raise FileNotFoundError(
-            f"Input image not found {image_path}"
+            f"Image not found: {image_path}"
         )
 
-    image = cv2.imread(image_path)
+    if not os.path.exists(MODEL_PATH):
+        raise FileNotFoundError(
+            f"YuNet model not found: {MODEL_PATH}"
+        )
+
+    image = cv2.imread(
+        image_path
+    )
 
     if image is None:
         raise ValueError(
-            f"Unable to load image:{image_path}"
+            f"Unable to load image: {image_path}"
         )
 
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    height, width = image.shape[:2]
 
-    cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-
-    face_cascade = cv2.CascadeClassifier(cascade_path)
-
-    faces = face_cascade.detectMultiScale(
-        gray,
-        scaleFactor=1.1,
-        minNeighbors=5,
-        minSize=(50, 50)
+    detector = cv2.FaceDetectorYN.create(
+        MODEL_PATH,
+        "",
+        (width, height),
+        0.6,
+        0.3,
+        5000
     )
 
-    if len(faces) == 0:
-        raise ValueError("No face detected in the image.")
+    _, faces = detector.detect(
+        image
+    )
+
+    if faces is None or len(faces) == 0:
+        raise ValueError(
+            "No face detected in the image."
+        )
+
+    return image, faces
+
+
+def detect_and_crop_face(
+    image_path,
+    output_dir="data"
+):
+    """
+    Detect faces using YuNet, select the largest
+    face, add padding around it, and save the crop.
+    """
+
+    image, faces = detect_faces(
+        image_path
+    )
+
+    # ----------------------------------------
+    # Select the largest detected face
+    # ----------------------------------------
 
     largest_face = max(
         faces,
-        key=lambda rectangle: rectangle[2] * rectangle[3]
+        key=lambda face:
+        face[2] * face[3]
     )
 
-    x, y, width, height = largest_face
+    # ----------------------------------------
+    # Original YuNet bounding box
+    # ----------------------------------------
+
+    original_x = int(
+        largest_face[0]
+    )
+
+    original_y = int(
+        largest_face[1]
+    )
+
+    original_width = int(
+        largest_face[2]
+    )
+
+    original_height = int(
+        largest_face[3]
+    )
+
+    image_height, image_width = (
+        image.shape[:2]
+    )
+
+    # ----------------------------------------
+    # Add padding
+    # ----------------------------------------
+
+    padding_x = int(
+        original_width * 0.25
+    )
+
+    padding_y = int(
+        original_height * 0.30
+    )
+
+    x1 = max(
+        0,
+        original_x - padding_x
+    )
+
+    y1 = max(
+        0,
+        original_y - padding_y
+    )
+
+    x2 = min(
+        image_width,
+        original_x +
+        original_width +
+        padding_x
+    )
+
+    y2 = min(
+        image_height,
+        original_y +
+        original_height +
+        padding_y
+    )
+
+    crop_width = x2 - x1
+    crop_height = y2 - y1
+
+    if crop_width <= 0 or crop_height <= 0:
+        raise ValueError(
+            "Invalid face crop dimensions."
+        )
+
+    # ----------------------------------------
+    # Crop face
+    # ----------------------------------------
 
     face_crop = image[
-        y:y + height,
-        x:x + width
+        y1:y2,
+        x1:x2
     ]
 
-    os.makedirs(output_dir, exist_ok=True)
+    # ----------------------------------------
+    # Create output directory
+    # ----------------------------------------
+
+    os.makedirs(
+        output_dir,
+        exist_ok=True
+    )
 
     output_path = os.path.join(
         output_dir,
@@ -56,19 +175,70 @@ def detect_and_crop_face(image_path, output_dir="data"):
 
     if not success:
         raise IOError(
-            "Failed to save cropped face."
+            "Failed to save face crop."
         )
+
+    # ----------------------------------------
+    # Return metadata
+    # ----------------------------------------
 
     return {
         "face_detected": True,
-        "face_count": len(faces),
+
+        "face_count": len(
+            faces
+        ),
+
+        "confidence": float(
+            largest_face[14]
+        ),
+
         "bounding_box": {
-            "x": int(x),
-            "y": int(y),
-            "width": int(width),
-            "height": int(height)
+            "x": original_x,
+            "y": original_y,
+            "width": original_width,
+            "height": original_height
         },
+
+        "crop_box": {
+            "x1": x1,
+            "y1": y1,
+            "x2": x2,
+            "y2": y2,
+            "width": crop_width,
+            "height": crop_height
+        },
+
+        "landmarks": {
+            "right_eye": [
+                float(largest_face[4]),
+                float(largest_face[5])
+            ],
+
+            "left_eye": [
+                float(largest_face[6]),
+                float(largest_face[7])
+            ],
+
+            "nose": [
+                float(largest_face[8]),
+                float(largest_face[9])
+            ],
+
+            "right_mouth": [
+                float(largest_face[10]),
+                float(largest_face[11])
+            ],
+
+            "left_mouth": [
+                float(largest_face[12]),
+                float(largest_face[13])
+            ]
+        },
+
         "face_crop_path": output_path,
-        "image_width": image.shape[1],
-        "image_height": image.shape[0]
-        }
+
+        "image_width": image_width,
+
+        "image_height": image_height
+    }
