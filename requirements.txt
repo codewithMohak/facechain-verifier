@@ -1,1 +1,5 @@
-opencv-python
+Opencv python
+Requess
+Python dotenv
+Web3
+pillow
