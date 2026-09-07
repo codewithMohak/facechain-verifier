@@ -2,6 +2,7 @@ import json
 import os
 
 import cv2
+from dotenv import load_dotenv
 
 from src.face.detector import detect_and_crop_face
 from src.face.encoder import encode_face, save_embedding
@@ -15,6 +16,8 @@ from src.search.lens import (
 
 IMAGE_PATH = "data/IMG-20260324-WA0013.jpg"
 METADATA_PATH = "data/verification_metadata.json"
+
+load_dotenv()
 
 
 def main():
@@ -98,11 +101,40 @@ def main():
         },
     }
 
+    blockchain_data = {
+        "status": "not_configured",
+        "hash": None,
+        "transaction_hash": None,
+    }
+
+    blockchain_enabled = os.getenv(
+        "BLOCKCHAIN_ANCHOR_ENABLED",
+        "false"
+    ).lower() == "true"
+
+    if blockchain_enabled:
+        from src.blockchain.anchor import anchor_data
+
+        print("\n[5] Anchoring verification on Sepolia...")
+        anchored = anchor_data(verification_data)
+        blockchain_data = {
+            "status": "anchored",
+            **anchored,
+        }
+        print(
+            f"[OK] Blockchain transaction: "
+            f"{anchored['transaction_hash']}"
+        )
+    else:
+        print("\n[5] Blockchain anchoring disabled.")
+
+    verification_data["blockchain"] = blockchain_data
+
     os.makedirs(os.path.dirname(METADATA_PATH), exist_ok=True)
     with open(METADATA_PATH, "w", encoding="utf-8") as metadata_file:
         json.dump(verification_data, metadata_file, indent=4)
 
-    print(f"[5] Metadata saved: {METADATA_PATH}")
+    print(f"[6] Metadata saved: {METADATA_PATH}")
     print(f"[OK] Verification status: {match_status}")
 
 
