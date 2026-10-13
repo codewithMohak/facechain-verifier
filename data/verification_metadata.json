@@ -1,0 +1,118 @@
+{
+    "version": "1.0",
+    "input_image": "hrithik.png",
+    "face": {
+        "detected": true,
+        "face_count": 1,
+        "confidence": 0.9411118030548096,
+        "bounding_box": {
+            "x": 230,
+            "y": 66,
+            "width": 98,
+            "height": 136
+        },
+        "landmarks": {
+            "right_eye": [
+                258.19573974609375,
+                118.88028717041016
+            ],
+            "left_eye": [
+                303.649169921875,
+                117.70851135253906
+            ],
+            "nose": [
+                280.0815124511719,
+                146.41268920898438
+            ],
+            "right_mouth": [
+                262.0268859863281,
+                168.0482177734375
+            ],
+            "left_mouth": [
+                301.0033874511719,
+                166.50799560546875
+            ]
+        }
+    },
+    "face_embedding": {
+        "model": "OpenCV SFace",
+        "dimensions": 128,
+        "embedding_file": "data/face_embedding.npy"
+    },
+    "web_search": {
+        "status": "PUBLIC_FACE_MATCH",
+        "match": {
+            "match_type": "visual",
+            "verification_level": "weak",
+            "title": "Anonymous Content \u00bb Anonymous Content Signs Hrithik Roshan",
+            "url": "https://www.anonymouscontent.com/17860/anonymous-content-signs-hrithik-roshan/",
+            "source": "Anonymous Content",
+            "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvYLK4B57rwcLpODttbQoQ4WI82e6fXCQ1bLrZlQ-Ysw1Y1uTq",
+            "visual_match_count": 59,
+            "visual_matches": [
+                {
+                    "title": "Anonymous Content \u00bb Anonymous Content Signs Hrithik Roshan",
+                    "url": "https://www.anonymouscontent.com/17860/anonymous-content-signs-hrithik-roshan/",
+                    "source": "Anonymous Content",
+                    "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvYLK4B57rwcLpODttbQoQ4WI82e6fXCQ1bLrZlQ-Ysw1Y1uTq",
+                    "image": "https://www.anonymouscontent.com/wp-content/uploads/2026/06/Hrithik-Roshan-681x638.jpeg"
+                },
+                {
+                    "title": "Hrithik Roshan turns 52 today \u2014 and he's still ruling hearts ...",
+                    "url": "https://www.instagram.com/p/DTVnxyVE7oV/",
+                    "source": "Instagram",
+                    "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTMm_hsk7w1Jf6Puo2XBz4HZ1qkOyI9qiN3mivrsqwgpxfdBiET",
+                    "image": "https://lookaside.instagram.com/seo/google_widget/crawler/?media_id=3807123994089584484"
+                },
+                {
+                    "title": "Amid ongoing public spat with Kangana Ranaut, CJP ...",
+                    "url": "https://www.instagram.com/p/DbaIzMVDCm3/",
+                    "source": "Instagram",
+                    "thumbnail": "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcSLFdefda3jnfj9K8AsVkKTi1LCNbdv_fSHZoG1iDN4_4CnvusN",
+                    "image": "https://lookaside.instagram.com/seo/google_widget/crawler/?media_id=3952509608956846483"
+                },
+                {
+                    "title": "Hrithik Roshan on X: \"#IndiaInFashion at NMACC.\" / X",
+                    "url": "https://x.com/iHrithik/status/1642514435901202432",
+                    "source": "X",
+                    "thumbnail": "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcSE38chN-lkzsgrLVr9DiUDTshfV9NRE3Hxwa5nOQ4qfes1Mdko",
+                    "image": "https://pbs.twimg.com/media/FstiKCoXwAczKeR?format=webp&name=large"
+                },
+                {
+                    "title": "Hrithik Roshan Songs: Listen Hrithik Roshan Hit Songs on ...",
+                    "url": "https://gaana.com/artist/hrithik-roshan",
+                    "source": "Gaana",
+                    "thumbnail": "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcQXb_pd7152c_kwmeaRJMdRvUpbJsUasrPgqotPlv08RYUmQooQ",
+                    "image": "https://a10.gaanacdn.com/gn_img/artists/VdNW0Mbo5e/dNW0rqwKo5/size_m_1737701553.jpg"
+                }
+            ]
+        },
+        "public_face_match": {
+            "similarity": 0.9185678457270114,
+            "is_match": true,
+            "is_inconclusive": false,
+            "match_verdict": "MATCH",
+            "title": "Hrithik Roshan Songs: Listen Hrithik Roshan Hit Songs on ...",
+            "source": "Gaana",
+            "url": "https://gaana.com/artist/hrithik-roshan",
+            "image": "https://a10.gaanacdn.com/gn_img/artists/VdNW0Mbo5e/dNW0rqwKo5/size_m_1737701553.jpg",
+            "candidate_image": "data\\candidates\\candidate_5.jpg",
+            "candidate_face_index": 0,
+            "candidate_face_count": 1,
+            "candidate_bounding_box": {
+                "x": 73,
+                "y": 39,
+                "width": 37,
+                "height": 48
+            },
+            "candidate_confidence": 0.9258800148963928
+        }
+    },
+    "blockchain": {
+        "status": "anchored",
+        "hash": "3bd3b5b869c2d155c0c9c7325fd35557e2310ee39b2c150546e18514f243f9e2",
+        "transaction_hash": "0xe7a2597ab774c70ef4416f2af9db1fa467d95bcd0c48ba05932d1eec36b2de21",
+        "block_number": 11907216,
+        "verification": "VERIFIED"
+    }
+}

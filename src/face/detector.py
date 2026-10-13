@@ -240,5 +240,9 @@ def detect_and_crop_face(
 
         "image_width": image_width,
 
-        "image_height": image_height
+        "image_height": image_height,
+
+        "raw_face": largest_face.astype(float).tolist(),
+
+        "all_faces": [f.astype(float).tolist() for f in faces]
     }

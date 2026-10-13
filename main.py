@@ -14,10 +14,30 @@ from src.search.lens import (
 )
 
 
-IMAGE_PATH = "data/IMG-20260324-WA0013.jpg"
+DEFAULT_IMAGE_CANDIDATES = [
+    "data/input.jpg",
+    "data/input1.jpeg",
+    "data/hrithik.png",
+    "data/IMG-20260324-WA0013.jpg",
+]
 METADATA_PATH = "data/verification_metadata.json"
 
 load_dotenv()
+
+
+def resolve_image_path():
+    env_image_path = os.getenv("IMAGE_PATH")
+    if env_image_path and os.path.exists(env_image_path):
+        return env_image_path
+
+    for candidate in DEFAULT_IMAGE_CANDIDATES:
+        if os.path.exists(candidate):
+            return candidate
+
+    return DEFAULT_IMAGE_CANDIDATES[0]
+
+
+IMAGE_PATH = resolve_image_path()
 
 
 def main():

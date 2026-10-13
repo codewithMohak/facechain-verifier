@@ -1,8 +1,10 @@
-@"
-.venv/
 .env
+.env.*
+!.env.example
+.venv/
+node_modules/
 __pycache__/
-*.pyc
-data/*
-!data/.gitkeep
-"@ | Set-Content .gitignore
+.pytest_cache/
+frontend/dist/
+storage/evidence/
+data/*.db
