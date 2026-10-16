@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, List, Dict, Any
@@ -28,6 +29,9 @@ from src.db.database import (
 
 from contextlib import asynccontextmanager
 
+logger = logging.getLogger("facechain.api")
+logging.basicConfig(level=logging.INFO)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
@@ -41,13 +45,15 @@ app = FastAPI(
 )
 
 # Enable CORS for frontend
+ALLOWED_ORIGINS = [
+    "https://facechain-verifier.vercel.app",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://facechain-verifier.vercel.app",
-        "http://localhost:5173",
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -174,9 +180,15 @@ def analyze_evidence(
         )
         return updated
     except Exception as err:
+        logger.exception("Unexpected error during forensic analysis for evidence '%s':", evidence_id)
+        # Sanitize error message to avoid leaking secrets, keys, or internal credentials
+        err_str = str(err).strip()
+        import re
+        sanitized = re.sub(r'(api_key|key|secret|password|token)=[^\s&]+', r'\1=[REDACTED]', err_str, flags=re.IGNORECASE)
+        sanitized = re.sub(r'https?://[^:@\s]+:[^@\s]+@', 'https://[CREDENTIALS]@', sanitized)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Forensic analysis failed: {err}",
+            detail=f"Forensic analysis failed: {sanitized}",
         )
 
 
@@ -516,3 +528,9 @@ def verify_legacy_record(req: LegacyVerifyRequest):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Legacy verification failed: {err}",
         )
+
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("src.api.app:app", host="0.0.0.0", port=port)

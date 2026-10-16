@@ -17,7 +17,13 @@ def download_image(
 ):
     """
     Download a candidate image from a public URL.
+    Returns True if downloaded successfully, False otherwise.
     """
+    if not image_url or not isinstance(image_url, str):
+        return False
+
+    if not image_url.startswith(("http://", "https://")):
+        return False
 
     try:
         response = requests.get(
@@ -37,23 +43,23 @@ def download_image(
         content_type = response.headers.get(
             "Content-Type",
             ""
-        )
+        ).lower()
 
         if "image" not in content_type:
             return False
 
+        os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
         with open(
             output_path,
             "wb"
         ) as image_file:
-
             image_file.write(
                 response.content
             )
 
         return True
 
-    except requests.RequestException:
+    except Exception:
         return False
 
 
@@ -64,7 +70,6 @@ def detect_candidate_faces(
     Detect faces in a candidate image
     using the same YuNet detector.
     """
-
     detector_path = (
         "models/"
         "face_detection_yunet_2023mar.onnx"
@@ -78,25 +83,34 @@ def detect_candidate_faces(
             f"{detector_path}"
         )
 
-    height, width = image.shape[:2]
-
-    detector = cv2.FaceDetectorYN.create(
-        detector_path,
-        "",
-        (width, height),
-        0.6,
-        0.3,
-        5000
-    )
-
-    _, faces = detector.detect(
-        image
-    )
-
-    if faces is None:
+    if image is None or not hasattr(image, "shape") or len(image.shape) < 2:
         return []
 
-    return faces
+    height, width = image.shape[:2]
+    if width <= 0 or height <= 0:
+        return []
+
+    try:
+        detector = cv2.FaceDetectorYN.create(
+            detector_path,
+            "",
+            (width, height),
+            0.6,
+            0.3,
+            5000
+        )
+
+        _, faces = detector.detect(
+            image
+        )
+
+        if faces is None:
+            return []
+
+        return faces
+    except Exception as e:
+        print(f"[!] Face detection on candidate image skipped: {e}")
+        return []
 
 
 def create_candidate_embedding(
@@ -199,6 +213,9 @@ def find_matching_public_face(
     candidate_number = 0
 
     for candidate in candidates:
+        if not candidate or not isinstance(candidate, dict):
+            continue
+
         image_url = candidate.get("image")
         if not image_url:
             continue
@@ -214,80 +231,90 @@ def find_matching_public_face(
             f"\nChecking candidate {candidate_number}..."
         )
 
-        downloaded = download_image(
-            image_url,
-            candidate_path
-        )
-
-        if not downloaded:
-            print(
-                "[!] Could not download candidate image."
-            )
-            continue
-
-        candidate_image = cv2.imread(candidate_path)
-        if candidate_image is None:
-            print(
-                "[!] Candidate image could not be loaded."
-            )
-            continue
-
-        faces = detect_candidate_faces(candidate_image)
-        if len(faces) == 0:
-            print(
-                "[!] No face detected in candidate."
-            )
-            continue
-
-        print(
-            f"[OK] Candidate contains {len(faces)} face(s)."
-        )
-
-        for face_idx, face in enumerate(faces):
-            candidate_embedding = create_candidate_embedding(
-                recognizer,
-                candidate_image,
-                face
+        try:
+            downloaded = download_image(
+                image_url,
+                candidate_path
             )
 
-            if candidate_embedding is None:
+            if not downloaded:
+                print(
+                    "[!] Could not download candidate image."
+                )
                 continue
 
-            similarity = compare_face_embeddings(
-                recognizer,
-                source_embedding,
-                candidate_embedding
-            )
+            candidate_image = cv2.imread(candidate_path)
+            if candidate_image is None or candidate_image.size == 0:
+                print(
+                    "[!] Candidate image could not be loaded."
+                )
+                continue
+
+            if len(candidate_image.shape) < 2 or candidate_image.shape[0] < 10 or candidate_image.shape[1] < 10:
+                print(
+                    "[!] Candidate image dimensions too small for face detection."
+                )
+                continue
+
+            faces = detect_candidate_faces(candidate_image)
+            if len(faces) == 0:
+                print(
+                    "[!] No face detected in candidate."
+                )
+                continue
 
             print(
-                f"    Face {face_idx + 1}/{len(faces)} similarity: {similarity:.4f}"
+                f"[OK] Candidate contains {len(faces)} face(s)."
             )
 
-            if best_match is None or similarity > best_match["similarity"]:
-                is_match = similarity >= COSINE_THRESHOLD
-                is_inconclusive = (0.30 <= similarity < COSINE_THRESHOLD)
+            for face_idx, face in enumerate(faces):
+                candidate_embedding = create_candidate_embedding(
+                    recognizer,
+                    candidate_image,
+                    face
+                )
 
-                best_match = {
-                    "similarity": similarity,
-                    "is_match": is_match,
-                    "is_inconclusive": is_inconclusive,
-                    "match_verdict": (
-                        "MATCH" if is_match else ("INCONCLUSIVE" if is_inconclusive else "NO_MATCH")
-                    ),
-                    "title": candidate.get("title"),
-                    "source": candidate.get("source"),
-                    "url": candidate.get("url") or candidate.get("link"),
-                    "image": image_url,
-                    "candidate_image": candidate_path,
-                    "candidate_face_index": face_idx,
-                    "candidate_face_count": len(faces),
-                    "candidate_bounding_box": {
-                        "x": int(face[0]),
-                        "y": int(face[1]),
-                        "width": int(face[2]),
-                        "height": int(face[3]),
-                    },
-                    "candidate_confidence": float(face[14]) if len(face) > 14 else 1.0,
-                }
+                if candidate_embedding is None:
+                    continue
+
+                similarity = compare_face_embeddings(
+                    recognizer,
+                    source_embedding,
+                    candidate_embedding
+                )
+
+                print(
+                    f"    Face {face_idx + 1}/{len(faces)} similarity: {similarity:.4f}"
+                )
+
+                if best_match is None or similarity > best_match["similarity"]:
+                    is_match = similarity >= COSINE_THRESHOLD
+                    is_inconclusive = (0.30 <= similarity < COSINE_THRESHOLD)
+
+                    best_match = {
+                        "similarity": similarity,
+                        "is_match": is_match,
+                        "is_inconclusive": is_inconclusive,
+                        "match_verdict": (
+                            "MATCH" if is_match else ("INCONCLUSIVE" if is_inconclusive else "NO_MATCH")
+                        ),
+                        "title": candidate.get("title"),
+                        "source": candidate.get("source"),
+                        "url": candidate.get("url") or candidate.get("link"),
+                        "image": image_url,
+                        "candidate_image": candidate_path,
+                        "candidate_face_index": face_idx,
+                        "candidate_face_count": len(faces),
+                        "candidate_bounding_box": {
+                            "x": int(face[0]),
+                            "y": int(face[1]),
+                            "width": int(face[2]),
+                            "height": int(face[3]),
+                        },
+                        "candidate_confidence": float(face[14]) if len(face) > 14 else 1.0,
+                    }
+        except Exception as cand_err:
+            print(f"[!] Candidate {candidate_number} skipped due to error: {cand_err}")
+            continue
 
     return best_match

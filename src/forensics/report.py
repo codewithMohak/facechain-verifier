@@ -140,7 +140,7 @@ def generate_forensic_report(
             "type": "public_search",
             "level": "corroboration",
             "summary": f"Public image match found ({web_search_analysis['status']})",
-            "details": f"Source: {web_search_analysis.get('best_match', {}).get('source', 'Unknown')}",
+            "details": f"Source: {(web_search_analysis.get('best_match') or {}).get('source', 'Unknown')}",
         })
 
     limitations = [
@@ -168,12 +168,12 @@ def generate_forensic_report(
                 "width": metadata_analysis.get("width"),
                 "height": metadata_analysis.get("height"),
             },
-            "camera": metadata_analysis.get("camera", {}),
-            "capture_parameters": metadata_analysis.get("capture_parameters", {}),
-            "timestamps": metadata_analysis.get("timestamps", {}),
-            "gps": metadata_analysis.get("gps", {}),
-            "missing_metadata": metadata_analysis.get("missing_metadata", []),
-            "suspicious_indicators": metadata_analysis.get("suspicious_indicators", []),
+            "camera": metadata_analysis.get("camera") or {},
+            "capture_parameters": metadata_analysis.get("capture_parameters") or {},
+            "timestamps": metadata_analysis.get("timestamps") or {},
+            "gps": metadata_analysis.get("gps") or {},
+            "missing_metadata": metadata_analysis.get("missing_metadata") or [],
+            "suspicious_indicators": metadata_analysis.get("suspicious_indicators") or [],
         },
         "image_manipulation_analysis": {
             "format": image_analysis.get("format"),
@@ -410,7 +410,7 @@ def generate_html_report(report_data: Dict[str, Any], output_path: Optional[str]
         <tr><th>Software Tag</th><td>{_safe_html(cam.get('software', 'Unavailable'))}</td></tr>
         <tr><th>Capture Timestamp (Original)</th><td>{_safe_html(timestamps.get('original', 'Unavailable'))}</td></tr>
         <tr><th>Modified Timestamp</th><td>{_safe_html(timestamps.get('modified', 'Unavailable'))}</td></tr>
-        <tr><th>Photographic Settings</th><td>ISO {_safe_html(meta.get('capture_parameters', {}).get('iso', 'N/A'))}, {_safe_html(meta.get('capture_parameters', {}).get('exposure_time', 'N/A'))}s, f/{_safe_html(meta.get('capture_parameters', {}).get('f_number', 'N/A'))}</td></tr>
+        <tr><th>Photographic Settings</th><td>ISO {_safe_html((meta.get('capture_parameters') or {}).get('iso', 'N/A'))}, {_safe_html((meta.get('capture_parameters') or {}).get('exposure_time', 'N/A'))}s, f/{_safe_html((meta.get('capture_parameters') or {}).get('f_number', 'N/A'))}</td></tr>
     </table>
 
     <h2>4. Geolocation (GPS) Metadata Analysis</h2>
@@ -420,20 +420,20 @@ def generate_html_report(report_data: Dict[str, Any], output_path: Optional[str]
 
     <h2>5. Image Manipulation & Compression (ELA)</h2>
     <table>
-        <tr><th>Analysis Method</th><td>{('JPEG Error Level Analysis (Quality: ' + _safe_html(img_an.get('parameters', {}).get('recompression_quality', 90)) + '%)' if img_an.get('ela_applicable') else 'Lossless Format / Chunk Structure Inspection')}</td></tr>
-        <tr><th>Statistical Delta (Mean / Max)</th><td>{(_safe_html(img_an.get('statistics', {}).get('mean_error')) + ' / ' + _safe_html(img_an.get('statistics', {}).get('max_error')) if img_an.get('statistics') else 'N/A (Lossless)')}</td></tr>
-        <tr><th>High-Contrast Pixels</th><td>{(_safe_html(img_an.get('statistics', {}).get('high_contrast_percentage')) + '%' if img_an.get('statistics') else 'N/A')}</td></tr>
-        <tr><th>Encoding Scheme</th><td>Progressive: {_safe_html(img_an.get('encoding_properties', {}).get('progressive', 'N/A'))}, Subsampling: {_safe_html(img_an.get('encoding_properties', {}).get('subsampling', 'N/A'))}</td></tr>
+        <tr><th>Analysis Method</th><td>{('JPEG Error Level Analysis (Quality: ' + _safe_html((img_an.get('parameters') or {}).get('recompression_quality', 90)) + '%)' if img_an.get('ela_applicable') else 'Lossless Format / Chunk Structure Inspection')}</td></tr>
+        <tr><th>Statistical Delta (Mean / Max)</th><td>{(_safe_html((img_an.get('statistics') or {}).get('mean_error')) + ' / ' + _safe_html((img_an.get('statistics') or {}).get('max_error')) if img_an.get('statistics') else 'N/A (Lossless)')}</td></tr>
+        <tr><th>High-Contrast Pixels</th><td>{(_safe_html((img_an.get('statistics') or {}).get('high_contrast_percentage')) + '%' if img_an.get('statistics') else 'N/A')}</td></tr>
+        <tr><th>Encoding Scheme</th><td>Progressive: {_safe_html((img_an.get('encoding_properties') or {}).get('progressive', 'N/A'))}, Subsampling: {_safe_html((img_an.get('encoding_properties') or {}).get('subsampling', 'N/A'))}</td></tr>
         <tr><th>Methodology Notes</th><td class="text-muted">{_safe_html(img_an.get('methodology_note'))}</td></tr>
     </table>
 
     <h2>6. Biometric Face Analysis & Public Search</h2>
     <table>
         <tr><th>Face Detection (YuNet)</th><td>{('Detected (' + _safe_html(face_an.get('face_count', 1)) + ' face(s))' if face_an and face_an.get('face_detected') else 'No human face detected')}</td></tr>
-        <tr><th>Primary Face Confidence</th><td>{(_safe_html(round(float(face_an.get('confidence', 0))*100, 2)) + '%' if face_an and face_an.get('confidence') else 'N/A')}</td></tr>
+        <tr><th>Primary Face Confidence</th><td>{(_safe_html(round(float(face_an.get('confidence') or 0)*100, 2)) + '%' if face_an and face_an.get('confidence') is not None else 'N/A')}</td></tr>
         <tr><th>Facial Embedding Model</th><td>{_safe_html(face_an.get('embedding_model', 'OpenCV SFace 128-D'))}</td></tr>
         <tr><th>Reverse Search Status</th><td>{_safe_html(web_an.get('status', 'Not Run'))}</td></tr>
-        <tr><th>Public Candidate Correlation</th><td>{_safe_html(web_an.get('best_match', {}).get('title', 'None'))}</td></tr>
+        <tr><th>Public Candidate Correlation</th><td>{_safe_html((web_an.get('best_match') or {}).get('title', 'None'))}</td></tr>
     </table>
 
     <h2>7. Ethereum Sepolia Blockchain Anchoring</h2>

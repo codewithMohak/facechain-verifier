@@ -4,7 +4,7 @@ import type {
   SystemHealth,
 } from '../types/forensics';
 
-const API_BASE = `${(import.meta.env.VITE_API_BASE_URL || 'https://facechain-verifier-tzqr.onrender.com').replace(/\/+$/, '')}/api/v1`;
+const API_BASE = `${(import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'test' ? '' : 'https://facechain-verifier-tzqr.onrender.com')).replace(/\/+$/, '')}/api/v1`;
 
 export async function fetchHealth(): Promise<SystemHealth> {
   const res = await fetch(`${API_BASE}/health`);
